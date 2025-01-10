@@ -15,9 +15,14 @@ export async function signUp(req, res) {
             return res.status(409).send({ error: "Email já cadastrado" });
         }
 
+        if (user.password !== user.confirmPassword) {
+            return res.status(400).send({ error: "As senhas não coincidem" });
+        }
+
         const passwordHash = bcrypt.hashSync(user.password, 10);
         await db.collection("users").insertOne({
-            ...user,
+            name: user.name, 
+            email: user.email,
             password: passwordHash
         });
 
