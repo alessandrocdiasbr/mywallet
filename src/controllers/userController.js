@@ -1,57 +1,46 @@
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-
-import dotenv from 'dotenv';
-dotenv.config();
-
-import { db } from "../config/database.js";
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { db } from '../config/database.js';
 
 export async function signUp(req, res) {
-    const user = req.body;
+    const { name, email, password, confirmPassword } = req.body;
+
+    if (password !== confirmPassword) {
+        return res.status(422).send("As senhas não coincidem");
+    }
 
     try {
-        const userExisting = await db.collection("users").findOne({ email: user.email });
-        if (userExisting) {
-            return res.status(409).send({ error: "Email já cadastrado" });
-        }
+        const userExists = await db.collection("users").findOne({ email });
+        if (userExists) return res.status(409).send("E-mail já cadastrado");
 
-        if (user.password !== user.confirmPassword) {
-            return res.status(400).send({ error: "As senhas não coincidem" });
-        }
-
-        const passwordHash = bcrypt.hashSync(user.password, 10);
-        await db.collection("users").insertOne({
-            name: user.name, 
-            email: user.email,
-            password: passwordHash
+        const hash = bcrypt.hashSync(password, 10);
+        
+        await db.collection("users").insertOne({ 
+            name, 
+            email, 
+            password: hash 
         });
-
-        return res.status(201).send({ message: "Usuário cadastrado com sucesso" });
-    } catch (error) {
-        console.error("Erro no cadastro:", error);
-        return res.status(500).send({ error: "Erro interno no servidor" });
+        
+        res.sendStatus(201);
+    } catch (err) {
+        res.status(500).send(err.message);
     }
 }
 
 export async function signIn(req, res) {
-    const user = req.body;
+    const { email, password } = req.body;
 
     try {
-        const userRegistered = await db.collection("users").findOne({ email: user.email });
-        if (!userRegistered) {
-            return res.status(401).send({ error: "Credenciais inválidas" });
-        }
+        const user = await db.collection("users").findOne({ email });
+        if (!user) return res.status(404).send("E-mail não cadastrado");
 
-        const passwordCorrect = bcrypt.compareSync(user.password, userRegistered.password);
-        if (!passwordCorrect) {
-            return res.status(401).send({ error: "Credenciais inválidas" });
-        }
+        const isPasswordCorrect = bcrypt.compareSync(password, user.password);
+        if (!isPasswordCorrect) return res.status(401).send("Senha incorreta");
 
-        const token = jwt.sign({ userId: userRegistered._id }, process.env.JWT_SECRET, { expiresIn: 86400 });
-
-        return res.status(200).send({ token });
-    } catch (error) {
-        console.error("Erro no login:", error);
-        return res.status(500).send({ error: "Erro interno no servidor" });
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
+        
+        res.status(200).send({ token });
+    } catch (err) {
+        res.status(500).send(err.message);
     }
-}
+} 

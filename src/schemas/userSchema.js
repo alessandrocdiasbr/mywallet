@@ -1,33 +1,13 @@
-import Joi from 'joi';
+import joi from 'joi';
 
-
-export const userLoginSchema = Joi.object({
-    email: Joi.string().email().required().messages({
-        'string.email': 'O email deve ter um formato válido',
-        'any.required': 'O email é obrigatório'
-    }),
-    password: Joi.string().min(6).required().messages({
-        'string.min': 'A senha deve ter no mínimo 6 caracteres',
-        'any.required': 'A senha é obrigatória'
-    })
+export const signUpSchema = joi.object({
+    name: joi.string().required(),
+    email: joi.string().email().required(),
+    password: joi.string().min(6).required(),
+    confirmPassword: joi.string().valid(joi.ref('password')).required()
 });
 
-
-export const userSchema = Joi.object({
-    name: Joi.string().min(3).required().messages({
-        'string.min': 'O nome deve ter no mínimo 3 caracteres',
-        'any.required': 'O nome é obrigatório'
-    }),
-    email: Joi.string().email().required().messages({
-        'string.email': 'O email deve ter um formato válido',
-        'any.required': 'O email é obrigatório'
-    }),
-    password: Joi.string().min(6).required().messages({
-        'string.min': 'A senha deve ter no mínimo 6 caracteres',
-        'any.required': 'A senha é obrigatória'
-    }),
-    confirmPassword: Joi.string().valid(Joi.ref('password')).required().messages({
-        'any.only': 'As senhas devem coincidir',
-        'any.required': 'A confirmação de senha é obrigatória'
-    })
-});
+export const signInSchema = joi.object({
+    email: joi.string().email().required(),
+    password: joi.string().required()
+}); 
