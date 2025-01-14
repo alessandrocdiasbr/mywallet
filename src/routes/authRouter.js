@@ -9,3 +9,4 @@ authRouter.post("/sign-up", validateSchema(signUpSchema), signUp);
 authRouter.post("/sign-in", validateSchema(signInSchema), signIn);
 
 export default authRouter; 
+

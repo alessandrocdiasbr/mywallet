@@ -10,7 +10,8 @@ import {
     createTransaction, 
     getTransactions, 
     updateTransaction, 
-    deleteTransaction 
+    deleteTransaction,
+    getTransactionById
 } from "../controllers/transactionController.js";
 
 const transactionRouter = Router();
@@ -19,6 +20,7 @@ transactionRouter.use(authValidation);
 
 transactionRouter.post("/transactions", validateSchema(transactionSchema), createTransaction);
 transactionRouter.get("/transactions", getTransactions);
+transactionRouter.get("/transactions/:id", validateIdParam, getTransactionById);
 transactionRouter.put("/transactions/:id", validateIdParam, validateSchema(transactionSchema), updateTransaction);
 transactionRouter.delete("/transactions/:id", validateIdParam, deleteTransaction);
 

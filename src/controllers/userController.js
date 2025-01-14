@@ -3,27 +3,20 @@ import jwt from 'jsonwebtoken';
 import { db } from '../config/database.js';
 
 export async function signUp(req, res) {
-    const { name, email, password, confirmPassword } = req.body;
-
-    if (password !== confirmPassword) {
-        return res.status(422).send("As senhas não coincidem");
-    }
+    const { name, email, password } = req.body;
 
     try {
-        const userExists = await db.collection("users").findOne({ email });
-        if (userExists) return res.status(409).send("E-mail já cadastrado");
-
-        const hash = bcrypt.hashSync(password, 10);
-        
-        await db.collection("users").insertOne({ 
-            name, 
-            email, 
-            password: hash 
+        const hashedPassword = bcrypt.hashSync(password, 10);
+        const result = await db.collection('users').insertOne({
+            name,
+            email,
+            password: hashedPassword
         });
-        
-        res.sendStatus(201);
+
+        res.status(201).send('Usuário criado com sucesso');
     } catch (err) {
-        res.status(500).send(err.message);
+        console.error('Erro ao criar usuário:', err);
+        res.status(500).send('Erro ao criar usuário');
     }
 }
 
@@ -31,16 +24,19 @@ export async function signIn(req, res) {
     const { email, password } = req.body;
 
     try {
-        const user = await db.collection("users").findOne({ email });
-        if (!user) return res.status(404).send("E-mail não cadastrado");
+        const user = await db.collection('users').findOne({ email });
 
-        const isPasswordCorrect = bcrypt.compareSync(password, user.password);
-        if (!isPasswordCorrect) return res.status(401).send("Senha incorreta");
+        if (!user || !bcrypt.compareSync(password, user.password)) {
+            return res.status(401).send('Credenciais inválidas');
+        }
 
-        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
-        
-        res.status(200).send({ token });
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+            expiresIn: '1h'
+        });
+
+        res.status(200).json({ token });
     } catch (err) {
-        res.status(500).send(err.message);
+        console.error('Erro ao autenticar usuário:', err);
+        res.status(500).send('Erro ao autenticar usuário');
     }
-} 
+}
